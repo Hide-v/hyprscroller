@@ -1,8 +1,8 @@
 #ifndef SCROLLER_FUNCTIONS_H
 #define SCROLLER_FUNCTIONS_H
 
-#include <hyprland/src/helpers/Timer.hpp>
 #include <hyprland/src/desktop/Workspace.hpp>
+#include <hyprland/src/helpers/time/Timer.hpp>
 #include <hyprland/src/managers/KeybindManager.hpp>
 
 SDispatchResult this_moveFocusTo(std::string args);
@@ -14,4 +14,4 @@ void update_relative_cursor_coords(PHLWINDOW window);
 void force_focus_to_window(PHLWINDOW window);
 void switch_to_window(PHLWINDOW from, PHLWINDOW to);
 
-#endif // SCROLLER_FUNCTIONS_H
+#endif  // SCROLLER_FUNCTIONS_H
