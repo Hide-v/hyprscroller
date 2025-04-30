@@ -90,21 +90,22 @@ StandardSize ScrollerSizes::get_column_width(int index) {
 Mode ScrollerSizes::get_mode(PHLMONITOR monitor) {
   update();
   for (const auto monitor_data : monitors) {
-    if (monitor_data.name == monitor->szName) return monitor_data.mode;
+    if (monitor_data.name == monitor->szName)
+      return monitor_data.mode;
   }
   return Mode::Row;
 }
 
 StandardSize ScrollerSizes::get_window_default_height(PHLWINDOW window) {
   // Check window rules
-  for (auto &r : window->m_vMatchedRules) {
-    if (r->szRule.starts_with("plugin:scroller:windowheight")) {
+  for (auto &r : window->m_matchedRules) {
+    if (r->m_rule.starts_with("plugin:scroller:windowheight")) {
       const auto window_height =
-          r->szRule.substr(r->szRule.find_first_of(' ') + 1);
+          r->m_rule.substr(r->m_rule.find_first_of(' ') + 1);
       return get_size_from_string(window_height, StandardSize::One);
     }
   }
-  const auto monitor = window->m_pMonitor.lock();
+  const auto monitor = window->m_monitor.lock();
   update();
   for (const auto monitor_data : monitors) {
     if (monitor_data.name == monitor->szName)
@@ -115,14 +116,14 @@ StandardSize ScrollerSizes::get_window_default_height(PHLWINDOW window) {
 
 StandardSize ScrollerSizes::get_column_default_width(PHLWINDOW window) {
   // Check window rules
-  for (auto &r : window->m_vMatchedRules) {
-    if (r->szRule.starts_with("plugin:scroller:columnwidth")) {
+  for (auto &r : window->m_matchedRules) {
+    if (r->m_rule.starts_with("plugin:scroller:columnwidth")) {
       const auto column_width =
-          r->szRule.substr(r->szRule.find_first_of(' ') + 1);
+          r->m_rule.substr(r->m_rule.find_first_of(' ') + 1);
       return get_size_from_string(column_width, StandardSize::OneHalf);
     }
   }
-  const auto monitor = window->m_pMonitor.lock();
+  const auto monitor = window->m_monitor.lock();
   update();
   for (const auto monitor_data : monitors) {
     if (monitor_data.name == monitor->szName)
@@ -131,53 +132,54 @@ StandardSize ScrollerSizes::get_column_default_width(PHLWINDOW window) {
   return column_default_width;
 }
 
-StandardSize ScrollerSizes::get_closest_size(
-    const std::vector<StandardSize> &sizes, double fraction, int step) const {
+StandardSize
+ScrollerSizes::get_closest_size(const std::vector<StandardSize> &sizes,
+                                double fraction, int step) const {
   size_t closest = step >= 0 ? sizes.size() - 1 : 0;
   double closest_distance = 2.0;
   for (size_t i = 0; i < sizes.size(); ++i) {
     double s;
     switch (sizes[i]) {
-      case StandardSize::OneEighth:
-        s = 1.0 / 8.0;
-        break;
-      case StandardSize::OneSixth:
-        s = 1.0 / 6.0;
-        break;
-      case StandardSize::OneFourth:
-        s = 1.0 / 4.0;
-        break;
-      case StandardSize::OneThird:
-        s = 1.0 / 3.0;
-        break;
-      case StandardSize::ThreeEighths:
-        s = 3.0 / 8.0;
-        break;
-      case StandardSize::OneHalf:
-        s = 1.0 / 2.0;
-        break;
-      case StandardSize::FiveEighths:
-        s = 5.0 / 8.0;
-        break;
-      case StandardSize::TwoThirds:
-        s = 2.0 / 3.0;
-        break;
-      case StandardSize::ThreeQuarters:
-        s = 3.0 / 4.0;
-        break;
-      case StandardSize::FiveSixths:
-        s = 5.0 / 6.0;
-        break;
-      case StandardSize::SevenEighths:
-        s = 7.0 / 8.0;
-        break;
-      case StandardSize::One:
-        s = 1.0;
-        break;
-      default:
-        // Shouldn't be here
-        s = 2.0;
-        break;
+    case StandardSize::OneEighth:
+      s = 1.0 / 8.0;
+      break;
+    case StandardSize::OneSixth:
+      s = 1.0 / 6.0;
+      break;
+    case StandardSize::OneFourth:
+      s = 1.0 / 4.0;
+      break;
+    case StandardSize::OneThird:
+      s = 1.0 / 3.0;
+      break;
+    case StandardSize::ThreeEighths:
+      s = 3.0 / 8.0;
+      break;
+    case StandardSize::OneHalf:
+      s = 1.0 / 2.0;
+      break;
+    case StandardSize::FiveEighths:
+      s = 5.0 / 8.0;
+      break;
+    case StandardSize::TwoThirds:
+      s = 2.0 / 3.0;
+      break;
+    case StandardSize::ThreeQuarters:
+      s = 3.0 / 4.0;
+      break;
+    case StandardSize::FiveSixths:
+      s = 5.0 / 6.0;
+      break;
+    case StandardSize::SevenEighths:
+      s = 7.0 / 8.0;
+      break;
+    case StandardSize::One:
+      s = 1.0;
+      break;
+    default:
+      // Shouldn't be here
+      s = 2.0;
+      break;
     }
     double distance = step * (s - fraction);
     if (distance >= 0.0 && distance < closest_distance) {
@@ -246,7 +248,8 @@ void ScrollerSizes::update_sizes(std::vector<StandardSize> &sizes,
     }
   }
   // if sizes is wrong, use a default value
-  if (sizes.size() == 0) sizes.push_back(default_size);
+  if (sizes.size() == 0)
+    sizes.push_back(default_size);
 }
 
 void ScrollerSizes::update() {

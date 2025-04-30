@@ -59,14 +59,16 @@ Column::~Column() {
 
 bool Column::has_window(PHLWINDOW window) const {
   for (auto win = windows.first(); win != nullptr; win = win->next()) {
-    if (win->data()->is_window(window)) return true;
+    if (win->data()->is_window(window))
+      return true;
   }
   return false;
 }
 
 Window *Column::get_window(PHLWINDOW window) const {
   for (auto win = windows.first(); win != nullptr; win = win->next()) {
-    if (win->data()->is_window(window)) return win->data();
+    if (win->data()->is_window(window))
+      return win->data();
   }
   return nullptr;
 }
@@ -77,30 +79,31 @@ void Column::add_active_window(PHLWINDOW window) {
   auto wwidth = scroller_sizes.get_column_default_width(window);
   auto w = new Window(window, row->get_max().y, row->get_max().h, wwidth);
 
-  if (row->get_pinned_column() == this) w->pin(true);
+  if (row->get_pinned_column() == this)
+    w->pin(true);
 
   ModeModifier modifier = row->get_mode_modifier();
   auto focus = modifier.get_focus();
   auto node = active;
   switch (modifier.get_position()) {
-    case ModeModifier::POSITION_AFTER:
-    default:
-      node = windows.emplace_after(active, w);
-      break;
-    case ModeModifier::POSITION_BEFORE:
-      node = windows.emplace_before(active, w);
-      break;
-    case ModeModifier::POSITION_END:
-      node = windows.emplace_after(windows.last(), w);
-      break;
-    case ModeModifier::POSITION_BEGINNING:
-      node = windows.emplace_before(windows.first(), w);
-      break;
+  case ModeModifier::POSITION_AFTER:
+  default:
+    node = windows.emplace_after(active, w);
+    break;
+  case ModeModifier::POSITION_BEFORE:
+    node = windows.emplace_before(active, w);
+    break;
+  case ModeModifier::POSITION_END:
+    node = windows.emplace_after(windows.last(), w);
+    break;
+  case ModeModifier::POSITION_BEGINNING:
+    node = windows.emplace_before(windows.first(), w);
+    break;
   }
   if (focus == ModeModifier::FOCUS_FOCUS)
     active = node;
   else
-    window->m_bNoInitialFocus = true;
+    window->m_noInitialFocus = true;
 }
 
 void Column::remove_window(PHLWINDOW window) {
@@ -115,7 +118,8 @@ void Column::remove_window(PHLWINDOW window) {
         // the column.
         active = active != windows.last() ? active->next() : active->prev();
       }
-      if (row->get_pinned_column() == this) win->data()->pin(false);
+      if (row->get_pinned_column() == this)
+        win->data()->pin(false);
       windows.erase(win);
       delete win->data();
       return;
@@ -275,7 +279,8 @@ void Column::recalculate_col_geometry_overview(const Vector2D &gap_x,
 }
 
 void Column::move_active_up() {
-  if (active == windows.first()) return;
+  if (active == windows.first())
+    return;
 
   reorder = Reorder::Auto;
   auto prev = active->prev();
@@ -283,7 +288,8 @@ void Column::move_active_up() {
 }
 
 void Column::move_active_down() {
-  if (active == windows.last()) return;
+  if (active == windows.last())
+    return;
 
   reorder = Reorder::Auto;
   auto next = active->next();
@@ -294,7 +300,8 @@ bool Column::move_focus_up(bool focus_wrap) {
   if (active == windows.first()) {
     PHLMONITOR monitor = g_pCompositor->getMonitorInDirection('u');
     if (monitor == nullptr) {
-      if (focus_wrap) active = windows.last();
+      if (focus_wrap)
+        active = windows.last();
       return true;
     }
     // use default dispatch for movefocus (change monitor)
@@ -310,7 +317,8 @@ bool Column::move_focus_down(bool focus_wrap) {
   if (active == windows.last()) {
     PHLMONITOR monitor = g_pCompositor->getMonitorInDirection('d');
     if (monitor == nullptr) {
-      if (focus_wrap) active = windows.first();
+      if (focus_wrap)
+        active = windows.first();
       return true;
     }
     // use default dispatch for movefocus (change monitor)
@@ -349,20 +357,20 @@ void Column::align_window(Direction direction, const Vector2D &gap_x,
   auto gap0 = active == windows.first() ? 0.0 : gap;
   auto gap1 = active == windows.last() ? 0.0 : gap;
   switch (direction) {
-    case Direction::Up:
-      reorder = Reorder::Lazy;
-      active->data()->move_to_top(geom.x, max, gap_x, gap0);
-      break;
-    case Direction::Down:
-      reorder = Reorder::Lazy;
-      active->data()->move_to_bottom(geom.x, max, gap_x, gap0);
-      break;
-    case Direction::Center:
-      reorder = Reorder::Lazy;
-      active->data()->move_to_center(geom.x, max, gap_x, gap0, gap1);
-      break;
-    default:
-      break;
+  case Direction::Up:
+    reorder = Reorder::Lazy;
+    active->data()->move_to_top(geom.x, max, gap_x, gap0);
+    break;
+  case Direction::Down:
+    reorder = Reorder::Lazy;
+    active->data()->move_to_bottom(geom.x, max, gap_x, gap0);
+    break;
+  case Direction::Center:
+    reorder = Reorder::Lazy;
+    active->data()->move_to_center(geom.x, max, gap_x, gap0, gap1);
+    break;
+  default:
+    break;
   }
 }
 
@@ -379,47 +387,47 @@ void Column::update_width(StandardSize cwidth, double maxw, bool internal_too) {
     geom.w = maxw;
   } else {
     switch (cwidth) {
-      case StandardSize::OneEighth:
-        geom.w = maxw / 8.0;
-        break;
-      case StandardSize::OneSixth:
-        geom.w = maxw / 6.0;
-        break;
-      case StandardSize::OneFourth:
-        geom.w = maxw / 4.0;
-        break;
-      case StandardSize::OneThird:
-        geom.w = maxw / 3.0;
-        break;
-      case StandardSize::ThreeEighths:
-        geom.w = 3.0 * maxw / 8.0;
-        break;
-      case StandardSize::OneHalf:
-        geom.w = maxw / 2.0;
-        break;
-      case StandardSize::FiveEighths:
-        geom.w = 5.0 * maxw / 8.0;
-        break;
-      case StandardSize::TwoThirds:
-        geom.w = 2.0 * maxw / 3.0;
-        break;
-      case StandardSize::ThreeQuarters:
-        geom.w = 3.0 * maxw / 4.0;
-        break;
-      case StandardSize::FiveSixths:
-        geom.w = 5.0 * maxw / 6.0;
-        break;
-      case StandardSize::SevenEighths:
-        geom.w = 7.0 * maxw / 8.0;
-        break;
-      case StandardSize::One:
-        geom.w = maxw;
-        break;
-      case StandardSize::Free:
-        // Only used when creating a column from an expelled window
-        geom.w = maxw;
-      default:
-        break;
+    case StandardSize::OneEighth:
+      geom.w = maxw / 8.0;
+      break;
+    case StandardSize::OneSixth:
+      geom.w = maxw / 6.0;
+      break;
+    case StandardSize::OneFourth:
+      geom.w = maxw / 4.0;
+      break;
+    case StandardSize::OneThird:
+      geom.w = maxw / 3.0;
+      break;
+    case StandardSize::ThreeEighths:
+      geom.w = 3.0 * maxw / 8.0;
+      break;
+    case StandardSize::OneHalf:
+      geom.w = maxw / 2.0;
+      break;
+    case StandardSize::FiveEighths:
+      geom.w = 5.0 * maxw / 8.0;
+      break;
+    case StandardSize::TwoThirds:
+      geom.w = 2.0 * maxw / 3.0;
+      break;
+    case StandardSize::ThreeQuarters:
+      geom.w = 3.0 * maxw / 4.0;
+      break;
+    case StandardSize::FiveSixths:
+      geom.w = 5.0 * maxw / 6.0;
+      break;
+    case StandardSize::SevenEighths:
+      geom.w = 7.0 * maxw / 8.0;
+      break;
+    case StandardSize::One:
+      geom.w = maxw;
+      break;
+    case StandardSize::Free:
+      // Only used when creating a column from an expelled window
+      geom.w = maxw;
+    default:
+      break;
     }
   }
   width = cwidth;
@@ -436,49 +444,49 @@ void Column::fit_size(FitSize fitsize, const Vector2D &gap_x, double gap) {
   reorder = Reorder::Auto;
   ListNode<Window *> *from, *to;
   switch (fitsize) {
-    case FitSize::Active:
-      from = to = active;
-      break;
-    case FitSize::Visible:
-      for (auto w = windows.first(); w != nullptr; w = w->next()) {
-        auto gap0 = w == windows.first() ? 0.0 : gap;
-        auto c0 = std::round(w->data()->get_geom_y(gap0));
-        auto c1 = std::round(c0 + w->data()->get_geom_h());
-        if ((c0 < max.y + max.h && c0 >= max.y) ||
-            (c1 > max.y && c1 <= max.y + max.h) ||
-            // should never happen as windows are never taller than the screen
-            (c0 < max.y && c1 >= max.y + max.h)) {
-          from = w;
-          break;
-        }
+  case FitSize::Active:
+    from = to = active;
+    break;
+  case FitSize::Visible:
+    for (auto w = windows.first(); w != nullptr; w = w->next()) {
+      auto gap0 = w == windows.first() ? 0.0 : gap;
+      auto c0 = std::round(w->data()->get_geom_y(gap0));
+      auto c1 = std::round(c0 + w->data()->get_geom_h());
+      if ((c0 < max.y + max.h && c0 >= max.y) ||
+          (c1 > max.y && c1 <= max.y + max.h) ||
+          // should never happen as windows are never taller than the screen
+          (c0 < max.y && c1 >= max.y + max.h)) {
+        from = w;
+        break;
       }
-      for (auto w = windows.last(); w != nullptr; w = w->prev()) {
-        auto gap0 = w == windows.first() ? 0.0 : gap;
-        auto c0 = std::round(w->data()->get_geom_y(gap0));
-        auto c1 = std::round(c0 + w->data()->get_geom_h());
-        if ((c0 < max.y + max.h && c0 >= max.y) ||
-            (c1 > max.y && c1 <= max.y + max.h) ||
-            // should never happen as windows are never taller than the screen
-            (c0 < max.y && c1 >= max.y + max.h)) {
-          to = w;
-          break;
-        }
+    }
+    for (auto w = windows.last(); w != nullptr; w = w->prev()) {
+      auto gap0 = w == windows.first() ? 0.0 : gap;
+      auto c0 = std::round(w->data()->get_geom_y(gap0));
+      auto c1 = std::round(c0 + w->data()->get_geom_h());
+      if ((c0 < max.y + max.h && c0 >= max.y) ||
+          (c1 > max.y && c1 <= max.y + max.h) ||
+          // should never happen as windows are never taller than the screen
+          (c0 < max.y && c1 >= max.y + max.h)) {
+        to = w;
+        break;
       }
-      break;
-    case FitSize::All:
-      from = windows.first();
-      to = windows.last();
-      break;
-    case FitSize::ToEnd:
-      from = active;
-      to = windows.last();
-      break;
-    case FitSize::ToBeg:
-      from = windows.first();
-      to = active;
-      break;
-    default:
-      return;
+    }
+    break;
+  case FitSize::All:
+    from = windows.first();
+    to = windows.last();
+    break;
+  case FitSize::ToEnd:
+    from = active;
+    to = windows.last();
+    break;
+  case FitSize::ToBeg:
+    from = windows.first();
+    to = active;
+    break;
+  default:
+    return;
   }
 
   // Now align from top of the screen (max.y), split height of
@@ -655,7 +663,8 @@ void Column::selection_reset() {
 
 bool Column::selection_exists() const {
   for (auto win = windows.first(); win != nullptr; win = win->next()) {
-    if (win->data()->is_selected()) return true;
+    if (win->data()->is_selected())
+      return true;
   }
   return false;
 }

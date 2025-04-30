@@ -49,18 +49,20 @@ CBox SelectionBorders::assignedBoxGlobal() {
           DECORATION_EDGE_TOP,
       m_pWindow.lock()));
 
-  const auto PWORKSPACE = m_pWindow->m_pWorkspace;
+  const auto PWORKSPACE = m_pWindow->m_workspace;
 
-  if (!PWORKSPACE) return box;
+  if (!PWORKSPACE)
+    return box;
 
-  const auto WORKSPACEOFFSET = PWORKSPACE && !m_pWindow->m_bPinned
+  const auto WORKSPACEOFFSET = PWORKSPACE && !m_pWindow->m_pinned
                                    ? PWORKSPACE->m_renderOffset->value()
                                    : Vector2D();
   return box.translate(WORKSPACEOFFSET);
 }
 
 void SelectionBorders::draw(PHLMONITOR pMonitor, float const &a) {
-  if (doesntWantBorders()) return;
+  if (doesntWantBorders())
+    return;
 
   if (m_bAssignedGeometry.width < m_seExtents.topLeft.x + 1 ||
       m_bAssignedGeometry.height < m_seExtents.topLeft.y + 1)
@@ -68,22 +70,23 @@ void SelectionBorders::draw(PHLMONITOR pMonitor, float const &a) {
 
   CBox windowBox =
       assignedBoxGlobal()
-          .translate(-pMonitor->vecPosition + m_pWindow->m_vFloatingOffset)
+          .translate(-pMonitor->vecPosition + m_pWindow->m_floatingOffset)
           .expand(-m_pWindow->getRealBorderSize())
           .scale(pMonitor->scale)
           .round();
 
-  if (windowBox.width < 1 || windowBox.height < 1) return;
+  if (windowBox.width < 1 || windowBox.height < 1)
+    return;
 
   auto grad = window->get_border_color();
   const bool ANIMATED =
-      m_pWindow->m_fBorderFadeAnimationProgress->isBeingAnimated();
+      m_pWindow->m_borderFadeAnimationProgress->isBeingAnimated();
   float a1 =
-      a * (ANIMATED ? m_pWindow->m_fBorderFadeAnimationProgress->value() : 1.f);
+      a * (ANIMATED ? m_pWindow->m_borderFadeAnimationProgress->value() : 1.f);
 
-  if (m_pWindow->m_fBorderAngleAnimationProgress->enabled()) {
+  if (m_pWindow->m_borderAngleAnimationProgress->enabled()) {
     grad.m_angle +=
-        m_pWindow->m_fBorderAngleAnimationProgress->value() * M_PI * 2;
+        m_pWindow->m_borderAngleAnimationProgress->value() * M_PI * 2;
     grad.m_angle = normalizeAngleRad(grad.m_angle);
   }
 
@@ -101,9 +104,9 @@ void SelectionBorders::draw(PHLMONITOR pMonitor, float const &a) {
 
   if (ANIMATED) {
     data.hasGrad2 = true;
-    data.grad1 = m_pWindow->m_cRealBorderColorPrevious;
+    data.grad1 = m_pWindow->m_realBorderColorPrevious;
     data.grad2 = grad;
-    data.lerp = m_pWindow->m_fBorderFadeAnimationProgress->value();
+    data.lerp = m_pWindow->m_borderFadeAnimationProgress->value();
   }
 
   g_pHyprRenderer->m_sRenderPass.add(makeShared<CBorderPassElement>(data));
@@ -116,9 +119,11 @@ eDecorationType SelectionBorders::getDecorationType() {
 void SelectionBorders::updateWindow(PHLWINDOW) {
   auto borderSize = m_pWindow->getRealBorderSize();
 
-  if (borderSize == m_iLastBorderSize) return;
+  if (borderSize == m_iLastBorderSize)
+    return;
 
-  if (borderSize <= 0 && m_iLastBorderSize <= 0) return;
+  if (borderSize <= 0 && m_iLastBorderSize <= 0)
+    return;
 
   m_iLastBorderSize = borderSize;
 
@@ -126,18 +131,19 @@ void SelectionBorders::updateWindow(PHLWINDOW) {
 }
 
 void SelectionBorders::damageEntire() {
-  if (!validMapped(m_pWindow)) return;
+  if (!validMapped(m_pWindow))
+    return;
 
   auto surfaceBox = m_pWindow->getWindowMainSurfaceBox();
   const auto ROUNDING = m_pWindow->rounding();
   const auto ROUNDINGSIZE = ROUNDING - M_SQRT1_2 * ROUNDING + 2;
   const auto BORDERSIZE = m_pWindow->getRealBorderSize() + 1;
 
-  const auto PWINDOWWORKSPACE = m_pWindow->m_pWorkspace;
+  const auto PWINDOWWORKSPACE = m_pWindow->m_workspace;
   if (PWINDOWWORKSPACE && PWINDOWWORKSPACE->m_renderOffset->isBeingAnimated() &&
-      !m_pWindow->m_bPinned)
+      !m_pWindow->m_pinned)
     surfaceBox.translate(PWINDOWWORKSPACE->m_renderOffset->value());
-  surfaceBox.translate(m_pWindow->m_vFloatingOffset);
+  surfaceBox.translate(m_pWindow->m_floatingOffset);
 
   CBox surfaceBoxExpandedBorder = surfaceBox;
   surfaceBoxExpandedBorder.expand(BORDERSIZE);
@@ -168,8 +174,8 @@ uint64_t SelectionBorders::getDecorationFlags() {
 std::string SelectionBorders::getDisplayName() { return "Border"; }
 
 bool SelectionBorders::doesntWantBorders() {
-  return m_pWindow->m_sWindowData.noBorder.valueOrDefault() ||
-         m_pWindow->m_bX11DoesntWantBorders ||
+  return m_pWindow->m_windowData.noBorder.valueOrDefault() ||
+         m_pWindow->m_X11DoesntWantBorders ||
          m_pWindow->getRealBorderSize() == 0;
 }
 
@@ -220,9 +226,10 @@ CBox JumpDecoration::assignedBoxGlobal() {
                                            : **TEXTSCALE;
   box.scaleFromCenter(scale);
 
-  const auto PWORKSPACE = m_pWindow->m_pWorkspace;
+  const auto PWORKSPACE = m_pWindow->m_workspace;
 
-  if (!PWORKSPACE) return box;
+  if (!PWORKSPACE)
+    return box;
 
   const auto WORKSPACEOFFSET = PWORKSPACE->m_renderOffset->value();
   return box.translate(WORKSPACEOFFSET);
@@ -234,10 +241,11 @@ void JumpDecoration::draw(PHLMONITOR pMonitor, float const &a) {
                        .scale(pMonitor->scale)
                        .round();
 
-  if (windowBox.width < 1 || windowBox.height < 1) return;
+  if (windowBox.width < 1 || windowBox.height < 1)
+    return;
 
-  const bool ANIMATED = m_pWindow->m_vRealPosition->isBeingAnimated() ||
-                        m_pWindow->m_vRealSize->isBeingAnimated();
+  const bool ANIMATED = m_pWindow->m_realPosition->isBeingAnimated() ||
+                        m_pWindow->m_realSize->isBeingAnimated();
 
   if (m_pTexture.get() == nullptr) {
     static auto FALLBACKFONT = CConfigValue<std::string>("misc:font_family");
@@ -251,7 +259,8 @@ void JumpDecoration::draw(PHLMONITOR pMonitor, float const &a) {
             ->getDataStaticPtr();
     const CHyprColor color = CHyprColor(**TEXTCOL);
     std::string font_family(*TEXTFONTFAMILY);
-    if (font_family == "") font_family = *FALLBACKFONT;
+    if (font_family == "")
+      font_family = *FALLBACKFONT;
 
     auto TEXTFONTSIZE = windowBox.width / m_sLabel.size();
     m_pTexture = g_pHyprOpenGL->renderText(m_sLabel, color, TEXTFONTSIZE, false,

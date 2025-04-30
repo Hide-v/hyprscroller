@@ -28,7 +28,7 @@ std::function<SDispatchResult(std::string)> orig_moveFocusTo;
 std::function<SDispatchResult(std::string)> orig_moveActiveTo;
 
 class Marks {
- public:
+public:
   Marks() {}
   ~Marks() { reset(); }
   void reset() {
@@ -50,7 +50,8 @@ class Marks {
   void del(const std::string &name) {
     const auto mark = marks.find(name);
     if (mark != marks.end()) {
-      if (g_pCompositor->m_lastWindow == mark->second) post_mark_event(nullptr);
+      if (g_pCompositor->m_lastWindow == mark->second)
+        post_mark_event(nullptr);
       marks.erase(mark);
     }
   }
@@ -84,14 +85,14 @@ class Marks {
     g_pEventManager->postEvent(SHyprIPCEvent{"scroller", "mark, 0, "});
   }
 
- private:
+private:
   std::unordered_map<std::string, PHLWINDOWREF> marks;
 };
 
 static Marks marks;
 
 class Trail {
- protected:
+protected:
   Trail(int number) : number(number), active(nullptr) {}
   ~Trail() {}
 
@@ -127,11 +128,13 @@ class Trail {
     }
   }
   void next() {
-    if (active == nullptr) return;
+    if (active == nullptr)
+      return;
     active = active == marks.last() ? marks.first() : active->next();
   }
   void prev() {
-    if (active == nullptr) return;
+    if (active == nullptr)
+      return;
     active = active == marks.first() ? marks.last() : active->prev();
   }
   void clear() {
@@ -140,7 +143,8 @@ class Trail {
   }
   bool is_marked(PHLWINDOW window) const {
     for (auto win = marks.first(); win != nullptr; win = win->next()) {
-      if (win->data() == window) return true;
+      if (win->data() == window)
+        return true;
     }
     return false;
   }
@@ -154,7 +158,7 @@ class Trail {
     }
   }
 
- private:
+private:
   friend class Trails;
 
   int number;
@@ -163,7 +167,7 @@ class Trail {
 };
 
 class Trails {
- public:
+public:
   Trails() : counter(0), active(nullptr) {
     // trail_new();
   }
@@ -215,7 +219,8 @@ class Trails {
     post_trail_event();
   }
   void trail_delete() {
-    if (active == nullptr) return;
+    if (active == nullptr)
+      return;
     auto act = active == trails.first() ? active->next() : active->prev();
     trails.erase(active);
     delete active->data();
@@ -223,13 +228,15 @@ class Trails {
     post_trail_event();
   }
   void trail_clear() {
-    if (active == nullptr) return;
+    if (active == nullptr)
+      return;
     active->data()->clear();
     post_trail_event();
   }
 
   void trail_toselection() {
-    if (active == nullptr) return;
+    if (active == nullptr)
+      return;
     active->data()->toselection();
   }
 
@@ -242,11 +249,13 @@ class Trails {
     post_trail_event();
   }
   void trailmark_next() {
-    if (active == nullptr) return;
+    if (active == nullptr)
+      return;
     active->data()->next();
   }
   void trailmark_prev() {
-    if (active == nullptr) return;
+    if (active == nullptr)
+      return;
     active->data()->prev();
   }
 
@@ -257,12 +266,13 @@ class Trails {
   }
   void post_trailmark_event(PHLWINDOW window) {
     bool marked = false;
-    if (active != nullptr && active->data()->is_marked(window)) marked = true;
+    if (active != nullptr && active->data()->is_marked(window))
+      marked = true;
     g_pEventManager->postEvent(SHyprIPCEvent{
         "scroller", std::format("trailmark, {}", marked ? 1 : 0)});
   }
 
- private:
+private:
   int counter;
   ListNode<Trail *> *active;
   List<Trail *> trails;
@@ -273,14 +283,16 @@ static Trails *trails;
 // ScrollerLayout
 Row *ScrollerLayout::getRowForWorkspace(WORKSPACEID workspace) {
   for (auto row = rows.first(); row != nullptr; row = row->next()) {
-    if (row->data()->get_workspace() == workspace) return row->data();
+    if (row->data()->get_workspace() == workspace)
+      return row->data();
   }
   return nullptr;
 }
 
 Row *ScrollerLayout::getRowForWindow(PHLWINDOW window) {
   for (auto row = rows.first(); row != nullptr; row = row->next()) {
-    if (row->data()->has_window(window)) return row->data();
+    if (row->data()->has_window(window))
+      return row->data();
   }
   return nullptr;
 }
@@ -305,12 +317,12 @@ void ScrollerLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection) {
   s->add_active_window(window);
 
   // Check window rules
-  for (auto &r : window->m_vMatchedRules) {
-    if (r->szRule.starts_with("plugin:scroller:group")) {
-      const auto name = r->szRule.substr(r->szRule.find_first_of(' ') + 1);
+  for (auto &r : window->m_matchedRules) {
+    if (r->m_rule.starts_with("plugin:scroller:group")) {
+      const auto name = r->m_rule.substr(r->m_rule.find_first_of(' ') + 1);
       s->move_active_window_to_group(name);
-    } else if (r->szRule.starts_with("plugin:scroller:alignwindow")) {
-      const auto dir = r->szRule.substr(r->szRule.find_first_of(' ') + 1);
+    } else if (r->m_rule.starts_with("plugin:scroller:alignwindow")) {
+      const auto dir = r->m_rule.substr(r->m_rule.find_first_of(' ') + 1);
       if (dir == "l" || dir == "left") {
         s->align_column(Direction::Left);
       } else if (dir == "r" || dir == "right") {
@@ -324,15 +336,15 @@ void ScrollerLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection) {
       } else if (dir == "m" || dir == "middle") {
         s->align_column(Direction::Middle);
       }
-    } else if (r->szRule.starts_with("plugin:scroller:marksadd")) {
-      const auto mark_name = r->szRule.substr(r->szRule.find_first_of(' ') + 1);
+    } else if (r->m_rule.starts_with("plugin:scroller:marksadd")) {
+      const auto mark_name = r->m_rule.substr(r->m_rule.find_first_of(' ') + 1);
       marks.add(window, mark_name);
     }
   }
 }
 
 /*
-    Called when a window is removed (unmapped) (m_bIsMapped still true), and
+    Called when a window is removed (unmapped) (m_isMapped still true), and
     then again when the window is destroyed.
     Some XWayland windows only call it once, at destroy, but those
     windows are not in the layout and are not floating either. For example Qt
@@ -344,7 +356,8 @@ void ScrollerLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection) {
 */
 void ScrollerLayout::onWindowRemovedTiling(PHLWINDOW window) {
   auto s = getRowForWindow(window);
-  if (s == nullptr) return;
+  if (s == nullptr)
+    return;
 
   marks.remove(window);
   trails->remove_window(window);
@@ -359,10 +372,12 @@ void ScrollerLayout::onWindowRemovedTiling(PHLWINDOW window) {
       }
     }
   }
-  if (window->m_bIsFloating) return;
+  if (window->m_isFloating)
+    return;
 
   // Don't modify focus if window is being dragged
-  if (window == g_pInputManager->currentlyDraggedWindow) return;
+  if (window == g_pInputManager->currentlyDraggedWindow)
+    return;
 
   WORKSPACEID workspace_id =
       g_pCompositor->m_lastMonitor->activeSpecialWorkspaceID();
@@ -370,7 +385,8 @@ void ScrollerLayout::onWindowRemovedTiling(PHLWINDOW window) {
     workspace_id = g_pCompositor->m_lastMonitor->activeWorkspaceID();
   }
   s = getRowForWorkspace(workspace_id);
-  if (s != nullptr) force_focus_to_window(s->get_active_window());
+  if (s != nullptr)
+    force_focus_to_window(s->get_active_window());
 }
 
 /*
@@ -383,14 +399,15 @@ void ScrollerLayout::onWindowRemovedFloating(PHLWINDOW) {
     workspace_id = g_pCompositor->m_lastMonitor->activeWorkspaceID();
   }
   auto s = getRowForWorkspace(workspace_id);
-  if (s != nullptr) g_pCompositor->focusWindow(s->get_active_window());
+  if (s != nullptr)
+    g_pCompositor->focusWindow(s->get_active_window());
 }
 
 /*
     Internal: called when window focus changes
 */
 void ScrollerLayout::onWindowFocusChange(PHLWINDOW window) {
-  if (window == nullptr) {  // no window has focus
+  if (window == nullptr) { // no window has focus
     return;
   }
 
@@ -414,7 +431,8 @@ bool ScrollerLayout::isWindowTiled(PHLWINDOW window) {
 */
 void ScrollerLayout::recalculateMonitor(const MONITORID &monitor_id) {
   const auto PMONITOR = g_pCompositor->getMonitorFromID(monitor_id);
-  if (!PMONITOR) return;
+  if (!PMONITOR)
+    return;
 
   g_pHyprRenderer->damageMonitor(PMONITOR);
 
@@ -435,10 +453,12 @@ void ScrollerLayout::recalculateMonitor(const MONITORID &monitor_id) {
   }
 
   auto PWORKSPACE = PMONITOR->activeWorkspace;
-  if (!PWORKSPACE) return;
+  if (!PWORKSPACE)
+    return;
 
   auto s = getRowForWorkspace(PWORKSPACE->m_id);
-  if (s == nullptr) return;
+  if (s == nullptr)
+    return;
 
   const Box oldmax = s->get_max();
   const bool force = s->update_sizes(PMONITOR);
@@ -456,10 +476,12 @@ void ScrollerLayout::recalculateMonitor(const MONITORID &monitor_id) {
 void ScrollerLayout::recalculateWindow(PHLWINDOW window) {
   // It can get called after windows are already being destroyed (decorations
   // update)
-  if (!enabled) return;
+  if (!enabled)
+    return;
 
   auto s = getRowForWindow(window);
-  if (s == nullptr) return;
+  if (s == nullptr)
+    return;
 
   s->recalculate_row_geometry();
 }
@@ -476,9 +498,9 @@ void ScrollerLayout::resizeActiveWindow(const Vector2D &delta,
   auto s = getRowForWindow(PWINDOW);
   if (s == nullptr) {
     // Window is not tiled
-    *PWINDOW->m_vRealSize =
-        Vector2D(std::max((PWINDOW->m_vRealSize->goal() + delta).x, 20.0),
-                 std::max((PWINDOW->m_vRealSize->goal() + delta).y, 20.0));
+    *PWINDOW->m_realSize =
+        Vector2D(std::max((PWINDOW->m_realSize->goal() + delta).x, 20.0),
+                 std::max((PWINDOW->m_realSize->goal() + delta).y, 20.0));
     PWINDOW->sendWindowSize();
     PWINDOW->updateWindowDecos();
     return;
@@ -499,18 +521,18 @@ void ScrollerLayout::fullscreenRequestForWindow(
 
   if (s == nullptr) {
     // save position and size if floating
-    if (window->m_bIsFloating && CURRENT_EFFECTIVE_MODE == FSMODE_NONE) {
-      window->m_vLastFloatingSize = window->m_vRealSize->goal();
-      window->m_vLastFloatingPosition = window->m_vRealPosition->goal();
-      window->m_vPosition = window->m_vRealPosition->goal();
-      window->m_vSize = window->m_vRealSize->goal();
+    if (window->m_isFloating && CURRENT_EFFECTIVE_MODE == FSMODE_NONE) {
+      window->m_lastFloatingSize = window->m_realSize->goal();
+      window->m_lastFloatingPosition = window->m_realPosition->goal();
+      window->m_position = window->m_realPosition->goal();
+      window->m_size = window->m_realSize->goal();
     }
     if (EFFECTIVE_MODE == FSMODE_NONE) {
       // window is not tiled
-      if (window->m_bIsFloating) {
+      if (window->m_isFloating) {
         // get back its' dimensions from position and size
-        *window->m_vRealPosition = window->m_vLastFloatingPosition;
-        *window->m_vRealSize = window->m_vLastFloatingSize;
+        *window->m_realPosition = window->m_lastFloatingPosition;
+        *window->m_realSize = window->m_lastFloatingSize;
 
         window->unsetWindowData(PRIORITY_LAYOUT);
         window->updateWindowData();
@@ -518,21 +540,22 @@ void ScrollerLayout::fullscreenRequestForWindow(
       }
     } else {
       // apply new pos and size being monitors' box
-      const auto PMONITOR = window->m_pMonitor.lock();
+      const auto PMONITOR = window->m_monitor.lock();
       if (EFFECTIVE_MODE == FSMODE_FULLSCREEN) {
-        *window->m_vRealPosition = PMONITOR->vecPosition;
-        *window->m_vRealSize = PMONITOR->vecSize;
+        *window->m_realPosition = PMONITOR->vecPosition;
+        *window->m_realSize = PMONITOR->vecSize;
       } else {
         Box box = {PMONITOR->vecPosition + PMONITOR->vecReservedTopLeft,
                    PMONITOR->vecSize - PMONITOR->vecReservedTopLeft -
                        PMONITOR->vecReservedBottomRight};
-        *window->m_vRealPosition = Vector2D(box.x, box.y);
-        *window->m_vRealSize = Vector2D(box.w, box.h);
+        *window->m_realPosition = Vector2D(box.x, box.y);
+        *window->m_realSize = Vector2D(box.w, box.h);
         window->sendWindowSize();
       }
     }
   } else {
-    if (EFFECTIVE_MODE == CURRENT_EFFECTIVE_MODE) return;
+    if (EFFECTIVE_MODE == CURRENT_EFFECTIVE_MODE)
+      return;
     s->set_fullscreen_mode(window, CURRENT_EFFECTIVE_MODE, EFFECTIVE_MODE);
   }
   g_pCompositor->changeWindowZOrder(window, true);
@@ -579,20 +602,20 @@ void ScrollerLayout::moveWindowTo(PHLWINDOW window,
   }
 
   switch (direction.at(0)) {
-    case 'l':
-      s->move_active_column(Direction::Left);
-      break;
-    case 'r':
-      s->move_active_column(Direction::Right);
-      break;
-    case 'u':
-      s->move_active_column(Direction::Up);
-      break;
-    case 'd':
-      s->move_active_column(Direction::Down);
-      break;
-    default:
-      break;
+  case 'l':
+    s->move_active_column(Direction::Left);
+    break;
+  case 'r':
+    s->move_active_column(Direction::Right);
+    break;
+  case 'u':
+    s->move_active_column(Direction::Up);
+    break;
+  case 'd':
+    s->move_active_column(Direction::Down);
+    break;
+  default:
+    break;
   }
 
   // "silent" requires to keep focus in the neighborhood of the moved window
@@ -715,7 +738,7 @@ void ScrollerLayout::onEnable() {
   marks.reset();
   trails = new Trails();
   for (auto &window : g_pCompositor->m_windows) {
-    if (window->m_bIsFloating || !window->m_bIsMapped || window->isHidden())
+    if (window->m_isFloating || !window->m_isMapped || window->isHidden())
       continue;
 
     onWindowCreatedTiling(window);
@@ -779,7 +802,8 @@ void ScrollerLayout::onDisable() {
     Return 0,0 if unpredictable
 */
 Vector2D ScrollerLayout::predictSizeForNewWindowTiled() {
-  if (!g_pCompositor->m_lastMonitor) return {};
+  if (!g_pCompositor->m_lastMonitor)
+    return {};
 
   WORKSPACEID workspace_id = g_pCompositor->m_lastMonitor->activeWorkspaceID();
   auto s = getRowForWorkspace(workspace_id);
@@ -871,20 +895,20 @@ void ScrollerLayout::move_focus(WORKSPACEID workspace, Direction direction) {
     // if workspace is empty, use the deault movefocus, which now
     // is "move to another monitor" (pass the direction)
     switch (direction) {
-      case Direction::Left:
-        orig_moveFocusTo("l");
-        break;
-      case Direction::Right:
-        orig_moveFocusTo("r");
-        break;
-      case Direction::Up:
-        orig_moveFocusTo("u");
-        break;
-      case Direction::Down:
-        orig_moveFocusTo("d");
-        break;
-      default:
-        break;
+    case Direction::Left:
+      orig_moveFocusTo("l");
+      break;
+    case Direction::Right:
+      orig_moveFocusTo("r");
+      break;
+    case Direction::Up:
+      orig_moveFocusTo("u");
+      break;
+    case Direction::Down:
+      orig_moveFocusTo("d");
+      break;
+    default:
+      break;
     }
     return;
   }
@@ -1005,14 +1029,16 @@ void ScrollerLayout::toggle_overview(WORKSPACEID workspace) {
 
 PHLWINDOW ScrollerLayout::getActiveWindow(WORKSPACEID workspace) {
   const Row *s = getRowForWorkspace(workspace);
-  if (s == nullptr) return nullptr;
+  if (s == nullptr)
+    return nullptr;
 
   return s->get_active_window();
 }
 
 void ScrollerLayout::marks_add(const std::string &name) {
   PHLWINDOW window = getActiveWindow(get_workspace_id());
-  if (window != nullptr) marks.add(window, name);
+  if (window != nullptr)
+    marks.add(window, name);
 }
 
 void ScrollerLayout::marks_delete(const std::string &name) { marks.del(name); }
@@ -1043,7 +1069,8 @@ void ScrollerLayout::trail_toselection() { trails->trail_toselection(); }
 
 void ScrollerLayout::trailmark_toggle() {
   PHLWINDOW window = getActiveWindow(get_workspace_id());
-  if (window != nullptr) trails->trailmark_toggle(window);
+  if (window != nullptr)
+    trails->trailmark_toggle(window);
 }
 
 void ScrollerLayout::trailmark_next() {
@@ -1129,7 +1156,8 @@ void ScrollerLayout::selection_move(WORKSPACEID workspace,
       break;
     }
   }
-  if (!selection) return;
+  if (!selection)
+    return;
 
   auto s = getRowForWorkspace(workspace);
   bool overview_on = false;
@@ -1138,7 +1166,8 @@ void ScrollerLayout::selection_move(WORKSPACEID workspace,
     rows.push_back(s);
   } else {
     overview_on = s->is_overview();
-    if (overview_on) s->toggle_overview();
+    if (overview_on)
+      s->toggle_overview();
   }
   // First modify ScrollerLayout internal structures and then call
   // CWindow::moveToWorkspace(PHLWORKSPACE pWorkspace)
@@ -1165,10 +1194,12 @@ void ScrollerLayout::selection_move(WORKSPACEID workspace,
       delete row->data();
     } else {
       bool overview = row->data()->is_overview();
-      if (overview) row->data()->toggle_overview();
+      if (overview)
+        row->data()->toggle_overview();
       g_pCompositor->focusWindow(row->data()->get_active_window());
       row->data()->recalculate_row_geometry();
-      if (overview) row->data()->toggle_overview();
+      if (overview)
+        row->data()->toggle_overview();
     }
     row = next;
   }
@@ -1177,7 +1208,8 @@ void ScrollerLayout::selection_move(WORKSPACEID workspace,
   // Reset selection
   selection_reset();
 
-  if (overview_on) s->toggle_overview();
+  if (overview_on)
+    s->toggle_overview();
 }
 
 typedef struct JumpData {
@@ -1212,7 +1244,8 @@ static std::string generate_label(unsigned int i, const std::string &keys,
 }
 
 void ScrollerLayout::jump() {
-  if (jumping) return;
+  if (jumping)
+    return;
 
   jumping = true;
   jump_data = new JumpData;
@@ -1223,7 +1256,8 @@ void ScrollerLayout::jump() {
       workspace_id = monitor->activeWorkspaceID();
     }
     auto s = getRowForWorkspace(workspace_id);
-    if (s == nullptr) continue;
+    if (s == nullptr)
+      continue;
 
     jump_data->workspaces.push_back({s, s->is_overview()});
   }
@@ -1292,11 +1326,12 @@ void ScrollerLayout::jump() {
             std::any_cast<IKeyboard::SKeyEvent>(keypress_event["event"]);
 
         const auto KEYCODE =
-            event.keycode + 8;  // Because to xkbcommon it's +8 from libinput
+            event.keycode + 8; // Because to xkbcommon it's +8 from libinput
         const xkb_keysym_t keysym =
             xkb_state_key_get_one_sym(keyboard->xkbState, KEYCODE);
 
-        if (event.state != WL_KEYBOARD_KEY_STATE_PRESSED) return;
+        if (event.state != WL_KEYBOARD_KEY_STATE_PRESSED)
+          return;
 
         // Check if key is valid, otherwise exit
         bool valid = false;
@@ -1464,7 +1499,8 @@ void ScrollerLayout::swipe_update(SCallbackInfo &info,
   gesture_delta += delta;
 
   if (**SENABLE && swipe_event.fingers == **SFINGERS) {
-    if (s == nullptr) return;
+    if (s == nullptr)
+      return;
     if (std::abs(gesture_delta.x) > std::abs(gesture_delta.y))
       swipe_direction =
           gesture_delta.x > 0 ? Direction::Right : Direction::Left;
@@ -1476,14 +1512,17 @@ void ScrollerLayout::swipe_update(SCallbackInfo &info,
     const Vector2D delta = gesture_delta * (**NATURAL ? -1.0 : 1.0);
     if (**OENABLE && swipe_event.fingers == **OFINGERS) {
       // Only accept the first update: one swipe, one trigger.
-      if (swipe_active) return;
+      if (swipe_active)
+        return;
       if (delta.y <= -**ODISTANCE) {
-        if (s == nullptr) return;
+        if (s == nullptr)
+          return;
         if (!s->is_overview()) {
           s->toggle_overview();
         }
       } else if (delta.y >= **ODISTANCE) {
-        if (s == nullptr) return;
+        if (s == nullptr)
+          return;
         if (s->is_overview()) {
           s->toggle_overview();
         }
@@ -1491,7 +1530,8 @@ void ScrollerLayout::swipe_update(SCallbackInfo &info,
     }
     if (**WENABLE && swipe_event.fingers == **WFINGERS) {
       // Only accept the first update: one swipe, one trigger.
-      if (swipe_active) return;
+      if (swipe_active)
+        return;
       if (delta.x <= -**WDISTANCE) {
         std::string offset(*WPREFIX);
         g_pKeybindManager->m_mDispatchers["workspace"](

@@ -16,11 +16,8 @@ extern std::function<SDispatchResult(std::string)> orig_moveFocusTo;
 extern ScrollerSizes scroller_sizes;
 
 Row::Row(WORKSPACEID workspace)
-    : workspace(workspace),
-      overview(false),
-      reorder(Reorder::Auto),
-      pinned(nullptr),
-      active(nullptr) {
+    : workspace(workspace), overview(false), reorder(Reorder::Auto),
+      pinned(nullptr), active(nullptr) {
   post_event("overview");
   const auto PMONITOR = g_pCompositor->m_lastMonitor.lock();
   set_mode(scroller_sizes.get_mode(PMONITOR));
@@ -67,7 +64,8 @@ void Row::find_auto_insert_point(Mode &new_mode,
       // Find the column with the highest number of windows
       auto node = columns.first();
       for (auto col = columns.first(); col != nullptr; col = col->next()) {
-        if (col->data()->size() > node->data()->size()) node = col;
+        if (col->data()->size() > node->data()->size())
+          node = col;
       }
       // Find a column with a lower number of windows than node, and insert
       // the window there
@@ -88,7 +86,8 @@ void Row::find_auto_insert_point(Mode &new_mode,
 
 void Row::add_active_window(PHLWINDOW window) {
   bool overview_on = overview;
-  if (overview) toggle_overview();
+  if (overview)
+    toggle_overview();
 
   eFullscreenMode fsmode;
   if (active != nullptr) {
@@ -105,10 +104,10 @@ void Row::add_active_window(PHLWINDOW window) {
 
   // Evaluate window rules
   auto store_modifier = modifier;
-  for (auto &r : window->m_vMatchedRules) {
-    if (r->szRule.starts_with("plugin:scroller:modemodifier")) {
+  for (auto &r : window->m_matchedRules) {
+    if (r->m_rule.starts_with("plugin:scroller:modemodifier")) {
       const auto modemodifier =
-          r->szRule.substr(r->szRule.find_first_of(' ') + 1);
+          r->m_rule.substr(r->m_rule.find_first_of(' ') + 1);
       // params: row|column after|before|end|beginning focus|nofocus
       std::istringstream iss(modemodifier);
       std::string arg;
@@ -148,26 +147,25 @@ void Row::add_active_window(PHLWINDOW window) {
     auto focus = modifier.get_focus();
     auto node = active;
     switch (modifier.get_position()) {
-      case ModeModifier::POSITION_AFTER:
-      default:
-        node = columns.emplace_after(active, new Column(window, this));
-        break;
-      case ModeModifier::POSITION_BEFORE:
-        node = columns.emplace_before(active, new Column(window, this));
-        break;
-      case ModeModifier::POSITION_END:
-        node = columns.emplace_after(columns.last(), new Column(window, this));
-        break;
-      case ModeModifier::POSITION_BEGINNING:
-        node =
-            columns.emplace_before(columns.first(), new Column(window, this));
-        break;
+    case ModeModifier::POSITION_AFTER:
+    default:
+      node = columns.emplace_after(active, new Column(window, this));
+      break;
+    case ModeModifier::POSITION_BEFORE:
+      node = columns.emplace_before(active, new Column(window, this));
+      break;
+    case ModeModifier::POSITION_END:
+      node = columns.emplace_after(columns.last(), new Column(window, this));
+      break;
+    case ModeModifier::POSITION_BEGINNING:
+      node = columns.emplace_before(columns.first(), new Column(window, this));
+      break;
     }
     if (focus == ModeModifier::FOCUS_FOCUS || store_active == nullptr)
       active = node;
     else {
       active = store_active;
-      window->m_bNoInitialFocus = true;
+      window->m_noInitialFocus = true;
     }
 
     reorder = Reorder::Auto;
@@ -180,7 +178,8 @@ void Row::add_active_window(PHLWINDOW window) {
     toggle_window_fullscreen_internal(window, fsmode);
     force_focus_to_window(window);
   }
-  if (overview_on) toggle_overview();
+  if (overview_on)
+    toggle_overview();
 }
 
 // Remove a window and re-adapt rows and columns, returning
@@ -188,7 +187,8 @@ void Row::add_active_window(PHLWINDOW window) {
 // so the layout can remove it.
 bool Row::remove_window(PHLWINDOW window) {
   bool overview_on = overview;
-  if (overview) toggle_overview();
+  if (overview)
+    toggle_overview();
 
   eFullscreenMode fsmode = window_fullscreen_state(window);
   if (fsmode != eFullscreenMode::FSMODE_NONE) {
@@ -230,7 +230,8 @@ bool Row::remove_window(PHLWINDOW window) {
     toggle_window_fullscreen_internal(awindow, fsmode);
     force_focus_to_window(awindow);
   }
-  if (overview_on) toggle_overview();
+  if (overview_on)
+    toggle_overview();
 
   return true;
 }
@@ -250,27 +251,30 @@ bool Row::move_focus(Direction dir, bool focus_wrap) {
   bool changed_workspace = false;
 
   switch (dir) {
-    case Direction::Left:
-      if (!move_focus_left(focus_wrap)) changed_workspace = true;
-      break;
-    case Direction::Right:
-      if (!move_focus_right(focus_wrap)) changed_workspace = true;
-      break;
-    case Direction::Up:
-      if (!active->data()->move_focus_up(focus_wrap)) changed_workspace = true;
-      break;
-    case Direction::Down:
-      if (!active->data()->move_focus_down(focus_wrap))
-        changed_workspace = true;
-      break;
-    case Direction::Begin:
-      move_focus_begin();
-      break;
-    case Direction::End:
-      move_focus_end();
-      break;
-    default:
-      return false;
+  case Direction::Left:
+    if (!move_focus_left(focus_wrap))
+      changed_workspace = true;
+    break;
+  case Direction::Right:
+    if (!move_focus_right(focus_wrap))
+      changed_workspace = true;
+    break;
+  case Direction::Up:
+    if (!active->data()->move_focus_up(focus_wrap))
+      changed_workspace = true;
+    break;
+  case Direction::Down:
+    if (!active->data()->move_focus_down(focus_wrap))
+      changed_workspace = true;
+    break;
+  case Direction::Begin:
+    move_focus_begin();
+    break;
+  case Direction::End:
+    move_focus_end();
+    break;
+  default:
+    return false;
   }
 
   reorder = Reorder::Auto;
@@ -283,7 +287,8 @@ bool Row::move_focus_left(bool focus_wrap) {
   if (active == columns.first()) {
     PHLMONITOR monitor = g_pCompositor->getMonitorInDirection('l');
     if (monitor == nullptr) {
-      if (focus_wrap) active = columns.last();
+      if (focus_wrap)
+        active = columns.last();
       return true;
     }
 
@@ -298,7 +303,8 @@ bool Row::move_focus_right(bool focus_wrap) {
   if (active == columns.last()) {
     PHLMONITOR monitor = g_pCompositor->getMonitorInDirection('r');
     if (monitor == nullptr) {
-      if (focus_wrap) active = columns.first();
+      if (focus_wrap)
+        active = columns.first();
       return true;
     }
 
@@ -322,10 +328,12 @@ Vector2D Row::calculate_gap_x(const ListNode<Column *> *column) const {
 }
 
 void Row::resize_active_column(int step) {
-  if (active->data()->fullscreen()) return;
+  if (active->data()->fullscreen())
+    return;
 
   bool overview_on = overview;
-  if (overview) toggle_overview();
+  if (overview)
+    toggle_overview();
 
   if (mode == Mode::Column) {
     active->data()->cycle_size_active_window(step, calculate_gap_x(active),
@@ -352,14 +360,17 @@ void Row::resize_active_column(int step) {
     reorder = Reorder::Auto;
     recalculate_row_geometry();
   }
-  if (overview_on) toggle_overview();
+  if (overview_on)
+    toggle_overview();
 }
 
 void Row::size_active_column(StandardSize size) {
-  if (active->data()->fullscreen()) return;
+  if (active->data()->fullscreen())
+    return;
 
   bool overview_on = overview;
-  if (overview) toggle_overview();
+  if (overview)
+    toggle_overview();
 
   if (mode == Mode::Column) {
     active->data()->size_active_window(size, calculate_gap_x(active), gap);
@@ -368,7 +379,8 @@ void Row::size_active_column(StandardSize size) {
     reorder = Reorder::Auto;
     recalculate_row_geometry();
   }
-  if (overview_on) toggle_overview();
+  if (overview_on)
+    toggle_overview();
 }
 
 void Row::size_active_column(const std::string &fraction) {
@@ -393,8 +405,10 @@ void Row::size_active_column(const std::string &fraction) {
 
 void Row::resize_active_window(const Vector2D &delta) {
   // If the active window in the active column is fullscreen, ignore.
-  if (active->data()->fullscreen()) return;
-  if (overview) return;
+  if (active->data()->fullscreen())
+    return;
+  if (overview)
+    return;
 
   active->data()->resize_active_window(calculate_gap_x(active), gap, delta);
   recalculate_row_geometry();
@@ -411,9 +425,11 @@ Mode Row::get_mode() const { return mode; }
 
 void Row::set_mode_modifier(const ModeModifier &options) {
   auto pos = options.get_position(false);
-  if (pos != ModeModifier::POSITION_UNDEFINED) modifier.set_position(pos);
+  if (pos != ModeModifier::POSITION_UNDEFINED)
+    modifier.set_position(pos);
   auto focus = options.get_focus(false);
-  if (focus != ModeModifier::FOCUS_UNDEFINED) modifier.set_focus(focus);
+  if (focus != ModeModifier::FOCUS_UNDEFINED)
+    modifier.set_focus(focus);
   auto auto_mode = options.get_auto_mode(false);
   if (auto_mode != ModeModifier::AUTO_UNDEFINED) {
     modifier.set_auto_mode(auto_mode);
@@ -432,42 +448,44 @@ void Row::set_mode_modifier(const ModeModifier &options) {
 ModeModifier Row::get_mode_modifier() const { return modifier; }
 
 void Row::align_column(Direction dir) {
-  if (active->data()->fullscreen()) return;
-  if (overview) return;
+  if (active->data()->fullscreen())
+    return;
+  if (overview)
+    return;
 
   switch (dir) {
-    case Direction::Left:
-      active->data()->set_geom_pos(max.x, max.y);
-      break;
-    case Direction::Right:
-      active->data()->set_geom_pos(max.x + max.w - active->data()->get_geom_w(),
-                                   max.y);
-      break;
-    case Direction::Center:
-      if (mode == Mode::Column) {
-        const Vector2D gap_x = calculate_gap_x(active);
-        active->data()->align_window(Direction::Center, gap_x, gap);
-        active->data()->recalculate_col_geometry(gap_x, gap, true);
-        return;
-      } else {
-        center_active_column();
-      }
-      break;
-    case Direction::Up:
-    case Direction::Down: {
-      const Vector2D gap_x = calculate_gap_x(active);
-      active->data()->align_window(dir, gap_x, gap);
-      active->data()->recalculate_col_geometry(gap_x, gap, true);
-      return;
-    } break;
-    case Direction::Middle: {
+  case Direction::Left:
+    active->data()->set_geom_pos(max.x, max.y);
+    break;
+  case Direction::Right:
+    active->data()->set_geom_pos(max.x + max.w - active->data()->get_geom_w(),
+                                 max.y);
+    break;
+  case Direction::Center:
+    if (mode == Mode::Column) {
       const Vector2D gap_x = calculate_gap_x(active);
       active->data()->align_window(Direction::Center, gap_x, gap);
-      center_active_column();
-      break;
-    }
-    default:
+      active->data()->recalculate_col_geometry(gap_x, gap, true);
       return;
+    } else {
+      center_active_column();
+    }
+    break;
+  case Direction::Up:
+  case Direction::Down: {
+    const Vector2D gap_x = calculate_gap_x(active);
+    active->data()->align_window(dir, gap_x, gap);
+    active->data()->recalculate_col_geometry(gap_x, gap, true);
+    return;
+  } break;
+  case Direction::Middle: {
+    const Vector2D gap_x = calculate_gap_x(active);
+    active->data()->align_window(Direction::Center, gap_x, gap);
+    center_active_column();
+    break;
+  }
+  default:
+    return;
   }
   reorder = Reorder::Lazy;
   recalculate_row_geometry();
@@ -531,33 +549,35 @@ void Row::selection_move(const List<Column *> &selection, Direction direction) {
     active = columns.first();
   } else {
     switch (direction) {
-      case Direction::Left:
-        insert_selection_before(columns, active, selection);
-        break;
-      case Direction::Begin:
-        insert_selection_before(columns, columns.first(), selection);
-        break;
-      case Direction::End:
-        insert_selection_after(columns, columns.last(), selection);
-        break;
-      case Direction::Right:
-      default:
-        insert_selection_after(columns, active, selection);
-        break;
+    case Direction::Left:
+      insert_selection_before(columns, active, selection);
+      break;
+    case Direction::Begin:
+      insert_selection_before(columns, columns.first(), selection);
+      break;
+    case Direction::End:
+      insert_selection_after(columns, columns.last(), selection);
+      break;
+    case Direction::Right:
+    default:
+      insert_selection_after(columns, active, selection);
+      break;
     }
   }
 }
 
 bool Row::selection_exists() const {
   for (auto col = columns.first(); col != nullptr; col = col->next()) {
-    if (col->data()->selection_exists()) return true;
+    if (col->data()->selection_exists())
+      return true;
   }
   return false;
 }
 
 void Row::selection_get(const Row *row, List<Column *> &selection) {
   bool overview_on = overview;
-  if (overview) toggle_overview();
+  if (overview)
+    toggle_overview();
 
   auto col = columns.first();
   while (col != nullptr) {
@@ -571,7 +591,8 @@ void Row::selection_get(const Row *row, List<Column *> &selection) {
       selection.push_back(column);
       if (col->data()->size() == 0) {
         // If the column is left empty, remove pin
-        if (col == pinned) pinned = nullptr;
+        if (col == pinned)
+          pinned = nullptr;
         // Removed all windows
         if (col == active) {
           active = active != columns.last() ? active->next() : active->prev();
@@ -583,55 +604,57 @@ void Row::selection_get(const Row *row, List<Column *> &selection) {
     col = next;
   }
 
-  if (overview_on) toggle_overview();
+  if (overview_on)
+    toggle_overview();
 }
 
 void Row::center_active_column() {
   Column *column = active->data();
-  if (column->fullscreen()) return;
+  if (column->fullscreen())
+    return;
 
   switch (column->get_width()) {
-    case StandardSize::OneEighth:
-      column->set_geom_pos(max.x + 7.0 * max.w / 16.0, max.y);
-      break;
-    case StandardSize::OneSixth:
-      column->set_geom_pos(max.x + 5.0 * max.w / 12.0, max.y);
-      break;
-    case StandardSize::OneFourth:
-      column->set_geom_pos(max.x + 3.0 * max.w / 8.0, max.y);
-      break;
-    case StandardSize::OneThird:
-      column->set_geom_pos(max.x + max.w / 3.0, max.y);
-      break;
-    case StandardSize::ThreeEighths:
-      column->set_geom_pos(max.x + 5.0 * max.w / 16.0, max.y);
-      break;
-    case StandardSize::OneHalf:
-      column->set_geom_pos(max.x + max.w / 4.0, max.y);
-      break;
-    case StandardSize::FiveEighths:
-      column->set_geom_pos(max.x + 3.0 * max.w / 16.0, max.y);
-      break;
-    case StandardSize::TwoThirds:
-      column->set_geom_pos(max.x + max.w / 6.0, max.y);
-      break;
-    case StandardSize::ThreeQuarters:
-      column->set_geom_pos(max.x + max.w / 8.0, max.y);
-      break;
-    case StandardSize::FiveSixths:
-      column->set_geom_pos(max.x + max.w / 12.0, max.y);
-      break;
-    case StandardSize::SevenEighths:
-      column->set_geom_pos(max.x + 1.0 * max.w / 16.0, max.y);
-      break;
-    case StandardSize::One:
-      column->set_geom_pos(max.x, max.y);
-      break;
-    case StandardSize::Free:
-      column->set_geom_pos(0.5 * (max.w - column->get_geom_w()), max.y);
-      break;
-    default:
-      break;
+  case StandardSize::OneEighth:
+    column->set_geom_pos(max.x + 7.0 * max.w / 16.0, max.y);
+    break;
+  case StandardSize::OneSixth:
+    column->set_geom_pos(max.x + 5.0 * max.w / 12.0, max.y);
+    break;
+  case StandardSize::OneFourth:
+    column->set_geom_pos(max.x + 3.0 * max.w / 8.0, max.y);
+    break;
+  case StandardSize::OneThird:
+    column->set_geom_pos(max.x + max.w / 3.0, max.y);
+    break;
+  case StandardSize::ThreeEighths:
+    column->set_geom_pos(max.x + 5.0 * max.w / 16.0, max.y);
+    break;
+  case StandardSize::OneHalf:
+    column->set_geom_pos(max.x + max.w / 4.0, max.y);
+    break;
+  case StandardSize::FiveEighths:
+    column->set_geom_pos(max.x + 3.0 * max.w / 16.0, max.y);
+    break;
+  case StandardSize::TwoThirds:
+    column->set_geom_pos(max.x + max.w / 6.0, max.y);
+    break;
+  case StandardSize::ThreeQuarters:
+    column->set_geom_pos(max.x + max.w / 8.0, max.y);
+    break;
+  case StandardSize::FiveSixths:
+    column->set_geom_pos(max.x + max.w / 12.0, max.y);
+    break;
+  case StandardSize::SevenEighths:
+    column->set_geom_pos(max.x + 1.0 * max.w / 16.0, max.y);
+    break;
+  case StandardSize::One:
+    column->set_geom_pos(max.x, max.y);
+    break;
+  case StandardSize::Free:
+    column->set_geom_pos(0.5 * (max.w - column->get_geom_w()), max.y);
+    break;
+  default:
+    break;
   }
 }
 
@@ -658,7 +681,8 @@ void Row::move_active_window_to_group(const std::string &name) {
 
 void Row::move_active_column(Direction dir) {
   bool overview_on = overview;
-  if (overview) toggle_overview();
+  if (overview)
+    toggle_overview();
 
   auto window = active->data()->get_active_window();
   update_relative_cursor_coords(window);
@@ -668,37 +692,39 @@ void Row::move_active_column(Direction dir) {
   }
 
   switch (dir) {
-    case Direction::Right:
-      if (active != columns.last()) {
-        auto next = active->next();
-        columns.move_after(next, active);
-      }
-      break;
-    case Direction::Left:
-      if (active != columns.first()) {
-        auto prev = active->prev();
-        columns.move_before(prev, active);
-      }
-      break;
-    case Direction::Up:
-      active->data()->move_active_up();
-      break;
-    case Direction::Down:
-      active->data()->move_active_down();
-      break;
-    case Direction::Begin: {
-      if (active == columns.first()) break;
-      columns.move_before(columns.first(), active);
-      break;
+  case Direction::Right:
+    if (active != columns.last()) {
+      auto next = active->next();
+      columns.move_after(next, active);
     }
-    case Direction::End: {
-      if (active == columns.last()) break;
-      columns.move_after(columns.last(), active);
-      break;
+    break;
+  case Direction::Left:
+    if (active != columns.first()) {
+      auto prev = active->prev();
+      columns.move_before(prev, active);
     }
-    case Direction::Center:
-    default:
-      return;
+    break;
+  case Direction::Up:
+    active->data()->move_active_up();
+    break;
+  case Direction::Down:
+    active->data()->move_active_down();
+    break;
+  case Direction::Begin: {
+    if (active == columns.first())
+      break;
+    columns.move_before(columns.first(), active);
+    break;
+  }
+  case Direction::End: {
+    if (active == columns.last())
+      break;
+    columns.move_after(columns.last(), active);
+    break;
+  }
+  case Direction::Center:
+  default:
+    return;
   }
 
   reorder = Reorder::Auto;
@@ -710,12 +736,14 @@ void Row::move_active_column(Direction dir) {
   }
   force_focus_to_window(window);
 
-  if (overview_on) toggle_overview();
+  if (overview_on)
+    toggle_overview();
 }
 
 void Row::move_active_window(Direction dir) {
   bool overview_on = overview;
-  if (overview) toggle_overview();
+  if (overview)
+    toggle_overview();
 
   auto window = active->data()->get_active_window();
   update_relative_cursor_coords(window);
@@ -725,59 +753,61 @@ void Row::move_active_window(Direction dir) {
   }
 
   switch (dir) {
-    case Direction::Right:
-      if (active->data()->size() == 1) {
-        if (active != columns.last()) {
-          // Need to admit the window in the col to its right
-          admit_window(AdmitExpelDirection::Right);
-        }
-      } else {
-        // Need to expel the window (to the right)
-        expel_window(AdmitExpelDirection::Right);
+  case Direction::Right:
+    if (active->data()->size() == 1) {
+      if (active != columns.last()) {
+        // Need to admit the window in the col to its right
+        admit_window(AdmitExpelDirection::Right);
       }
-      break;
-    case Direction::Left:
-      if (active->data()->size() == 1) {
-        if (active != columns.first()) {
-          // Need to admit the window in the col to its left
-          admit_window(AdmitExpelDirection::Left);
-        }
-      } else {
-        // Need to expel the window to the left
-        expel_window(AdmitExpelDirection::Left);
-      }
-      break;
-    case Direction::Up:
-      active->data()->move_active_up();
-      break;
-    case Direction::Down:
-      active->data()->move_active_down();
-      break;
-    case Direction::Begin: {
-      if (active->data()->size() == 1) {
-        if (active == columns.first()) break;
-        columns.move_before(columns.first(), active);
-      } else {
-        // Expel the window and create a column at the beginning
-        expel_window(AdmitExpelDirection::Left);
-        columns.move_before(columns.first(), active);
-      }
-      break;
+    } else {
+      // Need to expel the window (to the right)
+      expel_window(AdmitExpelDirection::Right);
     }
-    case Direction::End: {
-      if (active->data()->size() == 1) {
-        if (active == columns.last()) break;
-        columns.move_after(columns.last(), active);
-      } else {
-        // Expel window and create a column at the end
-        expel_window(AdmitExpelDirection::Right);
-        columns.move_after(columns.last(), active);
+    break;
+  case Direction::Left:
+    if (active->data()->size() == 1) {
+      if (active != columns.first()) {
+        // Need to admit the window in the col to its left
+        admit_window(AdmitExpelDirection::Left);
       }
-      break;
+    } else {
+      // Need to expel the window to the left
+      expel_window(AdmitExpelDirection::Left);
     }
-    case Direction::Center:
-    default:
-      return;
+    break;
+  case Direction::Up:
+    active->data()->move_active_up();
+    break;
+  case Direction::Down:
+    active->data()->move_active_down();
+    break;
+  case Direction::Begin: {
+    if (active->data()->size() == 1) {
+      if (active == columns.first())
+        break;
+      columns.move_before(columns.first(), active);
+    } else {
+      // Expel the window and create a column at the beginning
+      expel_window(AdmitExpelDirection::Left);
+      columns.move_before(columns.first(), active);
+    }
+    break;
+  }
+  case Direction::End: {
+    if (active->data()->size() == 1) {
+      if (active == columns.last())
+        break;
+      columns.move_after(columns.last(), active);
+    } else {
+      // Expel window and create a column at the end
+      expel_window(AdmitExpelDirection::Right);
+      columns.move_after(columns.last(), active);
+    }
+    break;
+  }
+  case Direction::Center:
+  default:
+    return;
   }
 
   reorder = Reorder::Auto;
@@ -791,16 +821,21 @@ void Row::move_active_window(Direction dir) {
   }
   force_focus_to_window(window);
 
-  if (overview_on) toggle_overview();
+  if (overview_on)
+    toggle_overview();
 }
 
 void Row::admit_window(AdmitExpelDirection dir) {
-  if (active->data()->fullscreen()) return;
-  if (dir == AdmitExpelDirection::Left && active == columns.first()) return;
-  if (dir == AdmitExpelDirection::Right && active == columns.last()) return;
+  if (active->data()->fullscreen())
+    return;
+  if (dir == AdmitExpelDirection::Left && active == columns.first())
+    return;
+  if (dir == AdmitExpelDirection::Right && active == columns.last())
+    return;
 
   bool overview_on = overview;
-  if (overview) toggle_overview();
+  if (overview)
+    toggle_overview();
 
   // We extract from active, but insert left or right of it, so we know at
   // least one gap will change
@@ -811,7 +846,8 @@ void Row::admit_window(AdmitExpelDirection dir) {
     gap_x.x = gap;
 
   auto w = active->data()->expel_active(gap_x);
-  if (active == pinned) w->pin(false);
+  if (active == pinned)
+    w->pin(false);
 
   ListNode<Column *> *node;
   if (dir == AdmitExpelDirection::Left) {
@@ -820,11 +856,13 @@ void Row::admit_window(AdmitExpelDirection dir) {
     node = active->next();
   }
   if (active->data()->size() == 0) {
-    if (active == pinned) pinned = nullptr;
+    if (active == pinned)
+      pinned = nullptr;
     columns.erase(active);
   }
   active = node;
-  if (active == pinned) w->pin(true);
+  if (active == pinned)
+    w->pin(true);
   active->data()->admit_window(w);
 
   reorder = Reorder::Auto;
@@ -832,17 +870,20 @@ void Row::admit_window(AdmitExpelDirection dir) {
 
   post_event("admitwindow");
 
-  if (overview_on) toggle_overview();
+  if (overview_on)
+    toggle_overview();
 }
 
 void Row::expel_window(AdmitExpelDirection dir) {
-  if (active->data()->fullscreen()) return;
+  if (active->data()->fullscreen())
+    return;
   if (active->data()->size() == 1)
     // nothing to expel
     return;
 
   bool overview_on = overview;
-  if (overview) toggle_overview();
+  if (overview)
+    toggle_overview();
 
   // The new column will be on the right of the active, so its gap to the right
   // will be the same, and on the left there will be a gap (to the column it
@@ -864,9 +905,9 @@ void Row::expel_window(AdmitExpelDirection dir) {
     active = columns.emplace_before(active, new Column(w, width, maxw, this));
     // Initialize the position so it is located before the next column
     // This helps the heuristic in recalculate_row_geometry()
-    active->data()->set_geom_pos(
-        active->next()->data()->get_geom_x() - active->data()->get_geom_w(),
-        max.y);
+    active->data()->set_geom_pos(active->next()->data()->get_geom_x() -
+                                     active->data()->get_geom_w(),
+                                 max.y);
   } else {
     active = columns.emplace_after(active, new Column(w, width, maxw, this));
     // Initialize the position so it is located after the previous column
@@ -881,7 +922,8 @@ void Row::expel_window(AdmitExpelDirection dir) {
 
   post_event("expelwindow");
 
-  if (overview_on) toggle_overview();
+  if (overview_on)
+    toggle_overview();
 }
 
 Vector2D Row::predict_window_size() const {
@@ -935,7 +977,8 @@ bool Row::update_sizes(PHLMONITOR monitor) {
   bool changed = gap != gaps_in;
   gap = gaps_in;
 
-  if (max != newmax) changed = true;
+  if (max != newmax)
+    changed = true;
 
   max = newmax;
   return changed;
@@ -944,16 +987,16 @@ bool Row::update_sizes(PHLMONITOR monitor) {
 void Row::set_fullscreen_mode_windows(eFullscreenMode mode) {
   Column *column = active->data();
   switch (mode) {
-    case eFullscreenMode::FSMODE_NONE:
-      break;
-    case eFullscreenMode::FSMODE_FULLSCREEN:
-      column->set_active_window_geometry(full);
-      break;
-    case eFullscreenMode::FSMODE_MAXIMIZED:
-      column->set_active_window_geometry(max);
-      break;
-    default:
-      break;
+  case eFullscreenMode::FSMODE_NONE:
+    break;
+  case eFullscreenMode::FSMODE_FULLSCREEN:
+    column->set_active_window_geometry(full);
+    break;
+  case eFullscreenMode::FSMODE_MAXIMIZED:
+    column->set_active_window_geometry(max);
+    break;
+  default:
+    break;
   }
 }
 
@@ -963,25 +1006,26 @@ void Row::set_fullscreen_mode(PHLWINDOW window, eFullscreenMode cur_mode,
   Window *win = nullptr;
   for (auto col = columns.first(); col != nullptr; col = col->next()) {
     win = col->data()->get_window(window);
-    if (win != nullptr) break;
+    if (win != nullptr)
+      break;
   }
   if (win != nullptr) {
     switch (new_mode) {
-      case eFullscreenMode::FSMODE_NONE:
-        win->pop_fullscreen_geom();
-        break;
-      case eFullscreenMode::FSMODE_FULLSCREEN:
-        if (cur_mode == eFullscreenMode::FSMODE_NONE)
-          win->push_fullscreen_geom();
-        win->set_geometry(full);
-        break;
-      case eFullscreenMode::FSMODE_MAXIMIZED:
-        if (cur_mode == eFullscreenMode::FSMODE_NONE)
-          win->push_fullscreen_geom();
-        win->set_geometry(max);
-        break;
-      default:
-        return;
+    case eFullscreenMode::FSMODE_NONE:
+      win->pop_fullscreen_geom();
+      break;
+    case eFullscreenMode::FSMODE_FULLSCREEN:
+      if (cur_mode == eFullscreenMode::FSMODE_NONE)
+        win->push_fullscreen_geom();
+      win->set_geometry(full);
+      break;
+    case eFullscreenMode::FSMODE_MAXIMIZED:
+      if (cur_mode == eFullscreenMode::FSMODE_NONE)
+        win->push_fullscreen_geom();
+      win->set_geometry(max);
+      break;
+    default:
+      return;
     }
   }
 }
@@ -999,49 +1043,49 @@ void Row::fit_size(FitSize fitsize) {
   }
   ListNode<Column *> *from, *to;
   switch (fitsize) {
-    case FitSize::Active:
-      from = to = active;
-      break;
-    case FitSize::Visible:
-      for (auto c = columns.first(); c != nullptr; c = c->next()) {
-        Column *col = c->data();
-        auto c0 = col->get_geom_x();
-        auto c1 = std::round(col->get_geom_x() + col->get_geom_w());
-        if ((c0 < max.x + max.w && c0 >= max.x) ||
-            (c1 > max.x && c1 <= max.x + max.w) ||
-            // should never happen as columns are never wider than the screen
-            (c0 < max.x && c1 >= max.x + max.w)) {
-          from = c;
-          break;
-        }
+  case FitSize::Active:
+    from = to = active;
+    break;
+  case FitSize::Visible:
+    for (auto c = columns.first(); c != nullptr; c = c->next()) {
+      Column *col = c->data();
+      auto c0 = col->get_geom_x();
+      auto c1 = std::round(col->get_geom_x() + col->get_geom_w());
+      if ((c0 < max.x + max.w && c0 >= max.x) ||
+          (c1 > max.x && c1 <= max.x + max.w) ||
+          // should never happen as columns are never wider than the screen
+          (c0 < max.x && c1 >= max.x + max.w)) {
+        from = c;
+        break;
       }
-      for (auto c = columns.last(); c != nullptr; c = c->prev()) {
-        Column *col = c->data();
-        auto c0 = col->get_geom_x();
-        auto c1 = std::round(col->get_geom_x() + col->get_geom_w());
-        if ((c0 < max.x + max.w && c0 >= max.x) ||
-            (c1 > max.x && c1 <= max.x + max.w) ||
-            // should never happen as columns are never wider than the screen
-            (c0 < max.x && c1 >= max.x + max.w)) {
-          to = c;
-          break;
-        }
+    }
+    for (auto c = columns.last(); c != nullptr; c = c->prev()) {
+      Column *col = c->data();
+      auto c0 = col->get_geom_x();
+      auto c1 = std::round(col->get_geom_x() + col->get_geom_w());
+      if ((c0 < max.x + max.w && c0 >= max.x) ||
+          (c1 > max.x && c1 <= max.x + max.w) ||
+          // should never happen as columns are never wider than the screen
+          (c0 < max.x && c1 >= max.x + max.w)) {
+        to = c;
+        break;
       }
-      break;
-    case FitSize::All:
-      from = columns.first();
-      to = columns.last();
-      break;
-    case FitSize::ToEnd:
-      from = active;
-      to = columns.last();
-      break;
-    case FitSize::ToBeg:
-      from = columns.first();
-      to = active;
-      break;
-    default:
-      return;
+    }
+    break;
+  case FitSize::All:
+    from = columns.first();
+    to = columns.last();
+    break;
+  case FitSize::ToEnd:
+    from = active;
+    to = columns.last();
+    break;
+  case FitSize::ToBeg:
+    from = columns.first();
+    to = active;
+    break;
+  default:
+    return;
   }
 
   // Now align from to left edge of the screen (max.x), split width of
@@ -1068,7 +1112,8 @@ void Row::fit_size(FitSize fitsize) {
 bool Row::is_overview() const { return overview; }
 
 void Row::toggle_overview() {
-  if (columns.size() == 0) return;
+  if (columns.size() == 0)
+    return;
   overview = !overview;
   post_event("overview");
   static auto *const *overview_scale_content =
@@ -1089,10 +1134,14 @@ void Row::toggle_overview() {
       auto cx0 = c->data()->get_geom_x();
       auto cx1 = cx0 + c->data()->get_geom_w();
       Vector2D cheight = c->data()->get_height();
-      if (cx0 < bmin.x) bmin.x = cx0;
-      if (cx1 > bmax.x) bmax.x = cx1;
-      if (cheight.x < bmin.y) bmin.y = cheight.x;
-      if (cheight.y > bmax.y) bmax.y = cheight.y;
+      if (cx0 < bmin.x)
+        bmin.x = cx0;
+      if (cx1 > bmax.x)
+        bmax.x = cx1;
+      if (cheight.x < bmin.y)
+        bmin.y = cheight.x;
+      if (cheight.y > bmax.y)
+        bmax.y = cheight.y;
     }
     double w = bmax.x - bmin.x;
     double h = bmax.y - bmin.y;
@@ -1117,7 +1166,7 @@ void Row::toggle_overview() {
       }
       adjust_overview_columns();
 
-      PHLMONITOR monitor = window->m_pWorkspace->m_monitor.lock();
+      PHLMONITOR monitor = window->m_workspace->m_monitor.lock();
       g_pHyprRenderer->damageMonitor(monitor);
 
       overviews->set_scale(workspace, scale);
@@ -1130,9 +1179,9 @@ void Row::toggle_overview() {
         Column *col = c->data();
         col->push_overview_geom();
         Vector2D cheight = col->get_height();
-        col->set_geom_pos(
-            offset.x + max.x + (col->get_geom_x() - bmin.x) * scale,
-            offset.y + max.y + (cheight.x - bmin.y) * scale);
+        col->set_geom_pos(offset.x + max.x +
+                              (col->get_geom_x() - bmin.x) * scale,
+                          offset.y + max.y + (cheight.x - bmin.y) * scale);
         col->set_geom_w(col->get_geom_w() * scale);
         Vector2D start(offset.x + max.x, offset.y + max.y);
         col->scale(bmin, start, scale, gap);
@@ -1141,7 +1190,7 @@ void Row::toggle_overview() {
     }
   } else {
     if (**overview_scale_content && overviews->is_initialized()) {
-      PHLMONITOR monitor = get_active_window()->m_pWorkspace->m_monitor.lock();
+      PHLMONITOR monitor = get_active_window()->m_workspace->m_monitor.lock();
       overviews->disable(workspace);
       g_pHyprRenderer->damageMonitor(monitor);
     }
@@ -1168,7 +1217,8 @@ void Row::toggle_overview() {
 }
 
 void Row::update_windows(const Box &oldmax, bool force) {
-  if (!force) return;
+  if (!force)
+    return;
 
   // Update active column position
   if (active && oldmax != max) {
@@ -1191,7 +1241,8 @@ void Row::update_windows(const Box &oldmax, bool force) {
 }
 
 void Row::recalculate_row_geometry() {
-  if (active == nullptr) return;
+  if (active == nullptr)
+    return;
 
   if (active->data()->fullscreen()) {
     return;
@@ -1247,8 +1298,10 @@ void Row::recalculate_row_geometry() {
         int i = 0;
         for (auto col = columns.first(); col != nullptr;
              col = col->next(), ++i) {
-          if (col == pinned) p = i;
-          if (col == active) a = i;
+          if (col == pinned)
+            p = i;
+          if (col == active)
+            a = i;
         }
         if (p > a) {
           // Pinned is after active
@@ -1418,7 +1471,7 @@ void Row::recalculate_row_geometry() {
           active->data()->set_geom_pos(a_x, max.y);
         }
       }
-    } else {  // lazy
+    } else { // lazy
       // Try to avoid moving the active column unless it is out of the screen.
       // the window is in a correct position
       active->data()->set_geom_pos(a_x, max.y);
@@ -1480,26 +1533,26 @@ ListNode<Column *> *Row::get_mouse_column() const {
 }
 void Row::scroll_update(Direction dir, const Vector2D &delta) {
   switch (dir) {
-    case Direction::Up:
-    case Direction::Down: {
-      auto column = get_mouse_column();
-      column->data()->scroll_update(delta.y);
-      break;
+  case Direction::Up:
+  case Direction::Down: {
+    auto column = get_mouse_column();
+    column->data()->scroll_update(delta.y);
+    break;
+  }
+  case Direction::Left:
+  case Direction::Right: {
+    // Apply column geometry
+    for (auto col = columns.first(); col != nullptr; col = col->next()) {
+      col->data()->set_geom_pos(col->data()->get_geom_x() + delta.x, max.y);
+      // First and last columns need a different gap
+      auto gap0 = col == columns.first() ? 0.0 : gap;
+      auto gap1 = col == columns.last() ? 0.0 : gap;
+      col->data()->recalculate_col_geometry(Vector2D(gap0, gap1), gap, false);
     }
-    case Direction::Left:
-    case Direction::Right: {
-      // Apply column geometry
-      for (auto col = columns.first(); col != nullptr; col = col->next()) {
-        col->data()->set_geom_pos(col->data()->get_geom_x() + delta.x, max.y);
-        // First and last columns need a different gap
-        auto gap0 = col == columns.first() ? 0.0 : gap;
-        auto gap1 = col == columns.last() ? 0.0 : gap;
-        col->data()->recalculate_col_geometry(Vector2D(gap0, gap1), gap, false);
-      }
-      break;
-    }
-    default:
-      break;
+    break;
+  }
+  default:
+    break;
   }
 
   auto monitor = g_pCompositor->getWorkspaceByID(workspace)->m_monitor;
