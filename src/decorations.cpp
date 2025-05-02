@@ -70,9 +70,9 @@ void SelectionBorders::draw(PHLMONITOR pMonitor, float const &a) {
 
   CBox windowBox =
       assignedBoxGlobal()
-          .translate(-pMonitor->vecPosition + m_pWindow->m_floatingOffset)
+          .translate(-pMonitor->m_position + m_pWindow->m_floatingOffset)
           .expand(-m_pWindow->getRealBorderSize())
-          .scale(pMonitor->scale)
+          .scale(pMonitor->m_scale)
           .round();
 
   if (windowBox.width < 1 || windowBox.height < 1)
@@ -91,7 +91,7 @@ void SelectionBorders::draw(PHLMONITOR pMonitor, float const &a) {
   }
 
   int borderSize = m_pWindow->getRealBorderSize();
-  const auto ROUNDING = m_pWindow->rounding() * pMonitor->scale;
+  const auto ROUNDING = m_pWindow->rounding() * pMonitor->m_scale;
   const auto ROUNDINGPOWER = m_pWindow->roundingPower();
 
   CBorderPassElement::SBorderData data;
@@ -155,7 +155,7 @@ void SelectionBorders::damageEntire() {
 
   for (auto const &m : g_pCompositor->m_monitors) {
     if (!g_pHyprRenderer->shouldRenderWindow(m_pWindow.lock(), m)) {
-      const CRegion monitorRegion({m->vecPosition, m->vecSize});
+      const CRegion monitorRegion({m->m_position, m->m_size});
       borderRegion.subtract(monitorRegion);
     }
   }
@@ -237,8 +237,8 @@ CBox JumpDecoration::assignedBoxGlobal() {
 
 void JumpDecoration::draw(PHLMONITOR pMonitor, float const &a) {
   CBox windowBox = assignedBoxGlobal()
-                       .translate(-pMonitor->vecPosition)
-                       .scale(pMonitor->scale)
+                       .translate(-pMonitor->m_position)
+                       .scale(pMonitor->m_scale)
                        .round();
 
   if (windowBox.width < 1 || windowBox.height < 1)
