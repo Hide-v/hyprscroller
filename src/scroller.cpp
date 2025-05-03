@@ -677,10 +677,10 @@ static SP<HOOK_CALLBACK_FN> mouseMoveHookCallback;
 
 void ScrollerLayout::onEnable() {
   // Hijack Hyprland's default dispatchers
-  orig_moveFocusTo = g_pKeybindManager->m_mDispatchers["movefocus"];
-  orig_moveActiveTo = g_pKeybindManager->m_mDispatchers["movewindow"];
-  g_pKeybindManager->m_mDispatchers["movefocus"] = this_moveFocusTo;
-  g_pKeybindManager->m_mDispatchers["movewindow"] = this_moveActiveTo;
+  orig_moveFocusTo = g_pKeybindManager->m_dispatchers["movefocus"];
+  orig_moveActiveTo = g_pKeybindManager->m_dispatchers["movewindow"];
+  g_pKeybindManager->m_dispatchers["movefocus"] = this_moveFocusTo;
+  g_pKeybindManager->m_dispatchers["movewindow"] = this_moveActiveTo;
 
   // Register dynamic callbacks for events
   workspaceHookCallback = HyprlandAPI::registerCallbackDynamic(
@@ -750,8 +750,8 @@ void ScrollerLayout::onEnable() {
 
 void ScrollerLayout::onDisable() {
   // Restore Hyprland's default dispatchers
-  g_pKeybindManager->m_mDispatchers["movefocus"] = orig_moveFocusTo;
-  g_pKeybindManager->m_mDispatchers["movewindow"] = orig_moveActiveTo;
+  g_pKeybindManager->m_dispatchers["movefocus"] = orig_moveFocusTo;
+  g_pKeybindManager->m_dispatchers["movewindow"] = orig_moveActiveTo;
 
   // Unregister dynamic callbacks for events
   if (workspaceHookCallback != nullptr) {
@@ -1534,11 +1534,11 @@ void ScrollerLayout::swipe_update(SCallbackInfo &info,
         return;
       if (delta.x <= -**WDISTANCE) {
         std::string offset(*WPREFIX);
-        g_pKeybindManager->m_mDispatchers["workspace"](
+        g_pKeybindManager->m_dispatchers["workspace"](
             **HSINVERT ? offset + "+1" : offset + "-1");
       } else if (delta.x >= **WDISTANCE) {
         std::string offset(*WPREFIX);
-        g_pKeybindManager->m_mDispatchers["workspace"](
+        g_pKeybindManager->m_dispatchers["workspace"](
             **HSINVERT ? offset + "-1" : offset + "+1");
       }
     }
